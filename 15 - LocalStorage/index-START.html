@@ -26,10 +26,116 @@
     </form>
   </div>
 
+  <!--
+    Added this 3 button after the Tutorial
+   -->
+  <button class="undo">Undo</button>
+  <button class="check-all">Check All</button>
+  <button class="clear-all">Clear All</button>
+  
+
 <script>
   const addItems = document.querySelector('.add-items');
   const itemsList = document.querySelector('.plates');
-  const items = [];
+
+  // Added the 3 buttons
+  const undoButton = document.querySelector('.undo');
+  const checkAllButton = document.querySelector('.check-all');
+  const clearAllButton = document.querySelector('.clear-all');
+
+  // Change const to let for reassign of the variable and update its value
+  let items = JSON.parse(localStorage.getItem('items')) || [];
+
+  // This is for the Undo Button
+  let previousItems = []; // Store the previous items
+  let previousState = []; // Store the previous done states
+  
+
+  function addItem(e) {
+    e.preventDefault();
+    const text = (this.querySelector('[name=item]')).value;
+    const item = {
+      text,
+      done: false
+    };
+
+    items.push(item);
+    populateList(items, itemsList);
+    localStorage.setItem('items', JSON.stringify(items));
+    this.reset();
+  }
+
+  function populateList(plates = [], platesList) {
+    platesList.innerHTML = plates.map((plate, i) => {
+      return `
+        <li>
+          <input type="checkbox" data-index=${i} id="item${i}" ${plate.done ? 'checked' : ''} />
+          <label for="item${i}">${plate.text}</label>
+        </li>
+      `;
+    }).join('');
+  }
+
+  function toggleDone(e) {
+    if (!e.target.matches('input')) return;
+    const el = e.target;
+    const index = el.dataset.index;
+    items[index].done = !items[index].done;
+    localStorage.setItem('items', JSON.stringify(items));
+    populateList(items, itemsList);
+  }
+
+  // Function to handle the "Undo" action
+  function handleUndo() {
+    items = previousItems.slice(); // Restore previous items
+    items.forEach((item, index) => (item.done = previousState[index])); // Restore previous states
+    
+    localStorage.setItem('items', JSON.stringify(items));
+    populateList(items, itemsList);
+  }
+
+  // Function to handle the "Check All" action
+function handleCheckAll(e) {
+  // Save the current state before modifying
+  previousItems = items.slice(); 
+  previousState = items.map(item => item.done);
+
+  // Check if all items are currently marked as done
+  const allCheck = items.every((item) => item.done === true);
+
+  // Toggle the "done" status of all items based on the current state
+  if (allCheck) {
+    items.forEach((item) => (item.done = false));
+  } else {
+    items.forEach((item) => (item.done = true));
+  }
+
+  localStorage.setItem('items', JSON.stringify(items));
+  populateList(items, itemsList);
+}
+
+  // Function to handle the "Clear All" action
+function handleClearAll() {
+  // Save the current state before modifying
+  previousItems = items.slice();
+  previousState = items.map(item => item.done);
+
+  // Remove items from localStorage and reset the items array
+  localStorage.removeItem('items');
+  items.length = 0;
+
+  populateList(items, itemsList);
+}
+
+  addItems.addEventListener('submit', addItem);
+  itemsList.addEventListener('click', toggleDone);
+
+  // Click Event for the 3 buttons
+  undoButton.addEventListener('click', handleUndo);
+  checkAllButton.addEventListener('click', handleCheckAll);
+  clearAllButton.addEventListener('click', handleClearAll);
+
+  populateList(items, itemsList);
 
 </script>
 
